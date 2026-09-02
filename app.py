@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import subprocess
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -20,10 +21,17 @@ def get_user():
 @app.route('/run-command')
 def run_command():
     cmd = request.args.get('cmd')
-    
-    # VULNERABILITY 3: Command Injection
-    # (Executing user input directly in the shell)
-    os.system(cmd)
+
+    allowed_commands = {
+        "list": ["ls"],
+        "pwd": ["pwd"]
+    }
+
+    selected_command = allowed_commands.get(cmd)
+    if not selected_command:
+        return "Invalid command", 400
+
+    subprocess.run(selected_command, check=False)
     return "Command executed"
 
 if __name__ == "__main__":
