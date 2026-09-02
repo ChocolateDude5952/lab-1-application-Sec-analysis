@@ -1,11 +1,17 @@
 import sqlite3
 import os
-from flask import Flask, request
+import subprocess
+from flask import Flask, request, abort
 
 app = Flask(__name__)
 
 # VULNERABILITY 1: Hardcoded Secret
 SECRET_KEY = "super-secret-key-12345"
+
+ALLOWED_COMMANDS = {
+    "list_files": ["ls"],
+    "show_date": ["date"]
+}
 
 @app.route('/user')
 def get_user():
@@ -23,10 +29,10 @@ def get_user():
 @app.route('/run-command')
 def run_command():
     cmd = request.args.get('cmd')
-    
-    # VULNERABILITY 3: Command Injection
-    # (Executing user input directly in the shell)
-    os.system(cmd)
+    if cmd not in ALLOWED_COMMANDS:
+        abort(400, description="Invalid command")
+
+    subprocess.run(ALLOWED_COMMANDS[cmd], check=True)
     return "Command executed"
 
 if __name__ == "__main__":
